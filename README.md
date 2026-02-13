@@ -1,59 +1,235 @@
-<p align="center"><a href="https://laravel.com" target="_blank"><img src="https://raw.githubusercontent.com/laravel/art/master/logo-lockup/5%20SVG/2%20CMYK/1%20Full%20Color/laravel-logolockup-cmyk-red.svg" width="400" alt="Laravel Logo"></a></p>
+#  PHP_Laravel12_Stats
 
-<p align="center">
-<a href="https://github.com/laravel/framework/actions"><img src="https://github.com/laravel/framework/workflows/tests/badge.svg" alt="Build Status"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/dt/laravel/framework" alt="Total Downloads"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/v/laravel/framework" alt="Latest Stable Version"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/l/laravel/framework" alt="License"></a>
-</p>
+![Laravel](https://img.shields.io/badge/Laravel-12-red)
+![PHP](https://img.shields.io/badge/PHP-8.2+-blue)
+![Composer](https://img.shields.io/badge/Composer-Required-orange)
+![License](https://img.shields.io/badge/License-MIT-green)
 
-## About Laravel
+A Laravel 12 project demonstrating installation and usage of the Laravel Stats package to generate statistics about your Laravel application.
 
-Laravel is a web application framework with expressive, elegant syntax. We believe development must be an enjoyable and creative experience to be truly fulfilling. Laravel takes the pain out of development by easing common tasks used in many web projects, such as:
+---
 
-- [Simple, fast routing engine](https://laravel.com/docs/routing).
-- [Powerful dependency injection container](https://laravel.com/docs/container).
-- Multiple back-ends for [session](https://laravel.com/docs/session) and [cache](https://laravel.com/docs/cache) storage.
-- Expressive, intuitive [database ORM](https://laravel.com/docs/eloquent).
-- Database agnostic [schema migrations](https://laravel.com/docs/migrations).
-- [Robust background job processing](https://laravel.com/docs/queues).
-- [Real-time event broadcasting](https://laravel.com/docs/broadcasting).
+#  Overview
 
-Laravel is accessible, powerful, and provides tools required for large, robust applications.
+This project shows how to:
 
-## Learning Laravel
+* Install Laravel 12
+* Configure environment settings
+* Install and use the `wnx/laravel-stats` package
+* Generate statistics about your Laravel project
+* Export stats in JSON format
+* Test stats using sample generated files
 
-Laravel has the most extensive and thorough [documentation](https://laravel.com/docs) and video tutorial library of all modern web application frameworks, making it a breeze to get started with the framework. You can also check out [Laravel Learn](https://laravel.com/learn), where you will be guided through building a modern Laravel application.
+---
 
-If you don't feel like reading, [Laracasts](https://laracasts.com) can help. Laracasts contains thousands of video tutorials on a range of topics including Laravel, modern PHP, unit testing, and JavaScript. Boost your skills by digging into our comprehensive video library.
+#  Features
 
-## Laravel Sponsors
+* Laravel 12 Setup
+* Environment Configuration
+* Laravel Stats Package Integration
+* CLI-Based Project Analysis
+* JSON Export Support
+* Optional Sample File Generation
+* Cache Clearing & Optimization Commands
 
-We would like to extend our thanks to the following sponsors for funding Laravel development. If you are interested in becoming a sponsor, please visit the [Laravel Partners program](https://partners.laravel.com).
+---
 
-### Premium Partners
+#  Folder Structure
 
-- **[Vehikl](https://vehikl.com)**
-- **[Tighten Co.](https://tighten.co)**
-- **[Kirschbaum Development Group](https://kirschbaumdevelopment.com)**
-- **[64 Robots](https://64robots.com)**
-- **[Curotec](https://www.curotec.com/services/technologies/laravel)**
-- **[DevSquad](https://devsquad.com/hire-laravel-developers)**
-- **[Redberry](https://redberry.international/laravel-development)**
-- **[Active Logic](https://activelogic.com)**
+```
+Laravel12Stats/
+│
+├── app/
+│   ├── Models/
+│   ├── Http/Controllers/
+│   ├── Jobs/
+│
+├── routes/
+├── config/
+├── database/
+├── .env
+├── composer.json
+└── README.md
+```
 
-## Contributing
+---
 
-Thank you for considering contributing to the Laravel framework! The contribution guide can be found in the [Laravel documentation](https://laravel.com/docs/contributions).
+#  System Requirements
 
-## Code of Conduct
+Before starting, ensure your system has:
 
-In order to ensure that the Laravel community is welcoming to all, please review and abide by the [Code of Conduct](https://laravel.com/docs/contributions#code-of-conduct).
+* PHP 8.2+
+* Composer
+* XAMPP / Apache / Nginx
+* MySQL (Optional)
+* Git (Optional)
 
-## Security Vulnerabilities
+Check PHP version:
 
-If you discover a security vulnerability within Laravel, please send an e-mail to Taylor Otwell via [taylor@laravel.com](mailto:taylor@laravel.com). All security vulnerabilities will be promptly addressed.
+```bash
+php -v
+```
 
-## License
+---
 
-The Laravel framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
+#  Installation Guide
+
+## 1️ Create Laravel 12 Project
+
+```bash
+composer create-project laravel/laravel Laravel12Stats
+```
+
+---
+
+## 2️ Configure Environment File
+
+Open `.env` and update:
+
+```env
+APP_NAME=Laravel
+APP_ENV=local
+APP_KEY=
+APP_DEBUG=true
+APP_URL=http://127.0.0.1:8000
+
+DB_CONNECTION=mysql
+DB_HOST=127.0.0.1
+DB_PORT=3306
+DB_DATABASE=laravel
+DB_USERNAME=root
+DB_PASSWORD=
+```
+
+Generate Application Key:
+
+```bash
+php artisan key:generate
+```
+
+---
+
+## 3️ Run the Application
+
+Start development server:
+
+```bash
+php artisan serve
+```
+
+Open in browser:
+
+```
+http://127.0.0.1:8000
+```
+
+If Laravel welcome page appears, installation is successful.
+
+---
+
+#  Install Laravel Stats Package
+
+Install as development dependency:
+
+```bash
+composer require wnx/laravel-stats --dev
+```
+
+Laravel automatically discovers and registers the package.
+
+No manual configuration required.
+
+---
+
+#  Verify Installation
+
+Check available commands:
+
+```bash
+php artisan list
+```
+
+You should see:
+
+```
+stats   Generate statistics for this Laravel project
+```
+
+Run stats:
+
+```bash
+php artisan stats
+```
+
+You will see project statistics such as:
+
+<img width="659" height="283" alt="Screenshot 2026-02-13 155554" src="https://github.com/user-attachments/assets/43e55198-39df-495c-8718-ee18a60b4e51" />
+
+---
+
+#  Generate Sample Files (Optional Testing)
+
+### Create Model
+
+```bash
+php artisan make:model Product
+```
+
+### Create Controller
+
+```bash
+php artisan make:controller ProductController
+```
+
+### Create Job
+
+```bash
+php artisan make:job SendEmailJob
+```
+
+Run stats again:
+
+```bash
+php artisan stats
+```
+<img width="665" height="313" alt="Screenshot 2026-02-13 160145" src="https://github.com/user-attachments/assets/ef32b362-8dde-4363-a5b6-eec1af718048" />
+
+
+
+You will see updated counts.
+
+---
+
+#  Export Stats as JSON
+
+Generate JSON output:
+
+```bash
+php artisan stats --json
+```
+<img width="1591" height="166" alt="Screenshot 2026-02-13 160605" src="https://github.com/user-attachments/assets/8932be55-6731-41ec-afdd-3e9643f572cb" />
+
+
+Save output to file:
+
+```bash
+php artisan stats --json > stats.json
+```
+
+Useful for CI/CD, automation, and monitoring.
+
+---
+
+#  Clear Cache (If Needed)
+
+If any issue occurs:
+
+```bash
+php artisan optimize:clear
+
+composer dump-autoload
+```
+
+---
+
+
