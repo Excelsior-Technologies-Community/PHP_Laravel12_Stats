@@ -5,6 +5,8 @@ namespace App\Http\Controllers;
 use App\Models\StatisticScan;
 use App\Services\ProjectStatsService;
 use Illuminate\Http\Request;
+use Illuminate\Pagination\LengthAwarePaginator;
+use Illuminate\Support\Facades\Response;
 use Throwable;
 
 class StatsController extends Controller
@@ -14,18 +16,13 @@ class StatsController extends Controller
     ) {
     }
 
-
     /**
      * Statistics Dashboard.
      */
     public function index(Request $request)
     {
         try {
-
-            $latestScan = StatisticScan::latest(
-                'scanned_at'
-            )->first();
-
+            $latestScan = StatisticScan::latest('scanned_at')->first();
 
             /*
             |--------------------------------------------------------------------------
@@ -34,19 +31,14 @@ class StatsController extends Controller
             */
 
             if (!$latestScan) {
-
-                $latestScan =
-                    $this->statsService->createScan();
+                $latestScan = $this->statsService->createScan();
             }
 
-
-            $statistics =
-                $latestScan->statistics;
-
+            $statistics = $latestScan->statistics ?? [];
 
             /*
             |--------------------------------------------------------------------------
-            | Search & Filter
+            | Search
             |--------------------------------------------------------------------------
             */
 
@@ -54,43 +46,141 @@ class StatsController extends Controller
                 (string) $request->query('search')
             );
 
+            /*
+            |--------------------------------------------------------------------------
+            | Category Filter
+            |--------------------------------------------------------------------------
+            */
+
             $filter = $request->query(
                 'filter',
                 'all'
             );
 
+            /*
+            |--------------------------------------------------------------------------
+            | Sorting
+            |--------------------------------------------------------------------------
+            */
 
-            $components =
-                $this->statsService->getComponents(
-                    $statistics
-                );
+            $sort = $request->query(
+                'sort',
+                'name'
+            );
 
+            $direction = $request->query(
+                'direction',
+                'asc'
+            );
 
-            $components =
-                $this->statsService->filterComponents(
-                    $components,
-                    $search,
-                    $filter
-                );
+            if (!in_array($direction, ['asc', 'desc'])) {
+                $direction = 'asc';
+            }
 
+            /*
+            |--------------------------------------------------------------------------
+            | Component Data
+            |--------------------------------------------------------------------------
+            */
+
+            $components = $this->statsService->getComponents(
+                $statistics
+            );
+
+            $components = $this->statsService->filterComponents(
+                $components,
+                $search,
+                $filter
+            );
+
+            /*
+            |--------------------------------------------------------------------------
+            | Sort Components
+            |--------------------------------------------------------------------------
+            */
+
+            $components = collect($components);
+
+            $allowedSorts = [
+                'name',
+                'number_of_classes',
+                'number_of_methods',
+                'methods_per_class',
+                'loc',
+                'lloc',
+                'lloc_per_method',
+            ];
+
+            if (!in_array($sort, $allowedSorts)) {
+                $sort = 'name';
+            }
+
+            $components = $components->sortBy(
+                function ($component) use ($sort) {
+                    return $component[$sort] ?? 0;
+                },
+                SORT_NATURAL | SORT_FLAG_CASE,
+                $direction === 'desc'
+            )->values();
+
+            /*
+            |--------------------------------------------------------------------------
+            | Component Pagination
+            |--------------------------------------------------------------------------
+            */
+
+            $perPage = (int) $request->query(
+                'per_page',
+                5
+            );
+
+            $allowedPerPage = [
+                5,
+                10,
+                20,
+                50
+            ];
+
+            if (!in_array($perPage, $allowedPerPage)) {
+                $perPage = 5;
+            }
+
+            $currentPage = LengthAwarePaginator::resolveCurrentPage();
+
+            $paginatedComponents = new LengthAwarePaginator(
+                $components->forPage(
+                    $currentPage,
+                    $perPage
+                )->values(),
+                $components->count(),
+                $perPage,
+                $currentPage,
+                [
+                    'path' => LengthAwarePaginator::resolveCurrentPath(),
+                    'query' => $request->query(),
+                ]
+            );
 
             return view(
                 'stats.index',
                 [
-                    'latestScan' =>
-                        $latestScan,
+                    'latestScan' => $latestScan,
 
-                    'statistics' =>
-                        $statistics,
+                    'statistics' => $statistics,
 
-                    'components' =>
-                        $components,
+                    'components' => $paginatedComponents,
 
-                    'search' =>
-                        $search,
+                    'totalComponents' => $components->count(),
 
-                    'filter' =>
-                        $filter,
+                    'search' => $search,
+
+                    'filter' => $filter,
+
+                    'sort' => $sort,
+
+                    'direction' => $direction,
+
+                    'perPage' => $perPage,
                 ]
             );
 
@@ -99,23 +189,25 @@ class StatsController extends Controller
             return view(
                 'stats.index',
                 [
-                    'latestScan' =>
-                        null,
+                    'latestScan' => null,
 
-                    'statistics' =>
-                        [],
+                    'statistics' => [],
 
-                    'components' =>
-                        [],
+                    'components' => collect(),
 
-                    'search' =>
-                        '',
+                    'totalComponents' => 0,
 
-                    'filter' =>
-                        'all',
+                    'search' => '',
 
-                    'error' =>
-                        $e->getMessage(),
+                    'filter' => 'all',
+
+                    'sort' => 'name',
+
+                    'direction' => 'asc',
+
+                    'perPage' => 5,
+
+                    'error' => $e->getMessage(),
                 ]
             );
         }
@@ -144,8 +236,8 @@ class StatsController extends Controller
                 ->route('stats.index')
                 ->with(
                     'error',
-                    'Statistics scan failed: '
-                    . $e->getMessage()
+                    'Statistics scan failed: ' .
+                    $e->getMessage()
                 );
         }
     }
@@ -153,16 +245,211 @@ class StatsController extends Controller
 
     /**
      * Statistics history.
+     *
+     * Features:
+     * - Search
+     * - Sorting
+     * - Date filtering
+     * - Pagination
+     *
+     * Default:
+     * - Sort by ID
+     * - Ascending order
      */
-    public function history()
+    public function history(Request $request)
     {
-        $scans = StatisticScan::latest(
-            'scanned_at'
-        )->paginate(10);
+        /*
+        |--------------------------------------------------------------------------
+        | Search
+        |--------------------------------------------------------------------------
+        */
+
+        $search = trim(
+            (string) $request->query('search')
+        );
+
+
+        /*
+        |--------------------------------------------------------------------------
+        | Sorting
+        |--------------------------------------------------------------------------
+        |
+        | Default is now:
+        |
+        | ID
+        | Ascending
+        |
+        */
+
+        $sort = $request->query(
+            'sort',
+            'id'
+        );
+
+        $direction = $request->query(
+            'direction',
+            'asc'
+        );
+
+
+        /*
+        |--------------------------------------------------------------------------
+        | Date Filters
+        |--------------------------------------------------------------------------
+        */
+
+        $from = $request->query('from');
+
+        $to = $request->query('to');
+
+
+        /*
+        |--------------------------------------------------------------------------
+        | Allowed Sorting Columns
+        |--------------------------------------------------------------------------
+        */
+
+        $allowedSorts = [
+            'id',
+            'project_name',
+            'number_of_classes',
+            'number_of_methods',
+            'loc',
+            'lloc',
+            'number_of_routes',
+            'scanned_at',
+        ];
+
+
+        /*
+        |--------------------------------------------------------------------------
+        | Validate Sort
+        |--------------------------------------------------------------------------
+        */
+
+        if (!in_array($sort, $allowedSorts)) {
+
+            $sort = 'id';
+        }
+
+
+        /*
+        |--------------------------------------------------------------------------
+        | Validate Direction
+        |--------------------------------------------------------------------------
+        */
+
+        if (!in_array($direction, ['asc', 'desc'])) {
+
+            $direction = 'asc';
+        }
+
+
+        /*
+        |--------------------------------------------------------------------------
+        | Query
+        |--------------------------------------------------------------------------
+        */
+
+        $query = StatisticScan::query();
+
+
+        /*
+        |--------------------------------------------------------------------------
+        | Project Search
+        |--------------------------------------------------------------------------
+        */
+
+        if ($search !== '') {
+
+            $query->where(function ($q) use ($search) {
+
+                $q->where(
+                    'project_name',
+                    'like',
+                    '%' . $search . '%'
+                );
+
+            });
+        }
+
+
+        /*
+        |--------------------------------------------------------------------------
+        | From Date
+        |--------------------------------------------------------------------------
+        */
+
+        if ($from) {
+
+            $query->whereDate(
+                'scanned_at',
+                '>=',
+                $from
+            );
+        }
+
+
+        /*
+        |--------------------------------------------------------------------------
+        | To Date
+        |--------------------------------------------------------------------------
+        */
+
+        if ($to) {
+
+            $query->whereDate(
+                'scanned_at',
+                '<=',
+                $to
+            );
+        }
+
+
+        /*
+        |--------------------------------------------------------------------------
+        | Apply Sorting
+        |--------------------------------------------------------------------------
+        */
+
+        $query->orderBy(
+            $sort,
+            $direction
+        );
+
+
+        /*
+        |--------------------------------------------------------------------------
+        | Pagination
+        |--------------------------------------------------------------------------
+        */
+
+        $scans = $query
+            ->paginate(4)
+            ->withQueryString();
+
+
+        /*
+        |--------------------------------------------------------------------------
+        | History View
+        |--------------------------------------------------------------------------
+        */
 
         return view(
             'stats.history',
-            compact('scans')
+            [
+                'scans' => $scans,
+
+                'search' => $search,
+
+                'sort' => $sort,
+
+                'direction' => $direction,
+
+                'from' => $from,
+
+                'to' => $to,
+            ]
         );
     }
 
@@ -193,6 +480,286 @@ class StatsController extends Controller
                     $comparison,
             ]
         );
+    }
+
+
+    /**
+     * Display one complete scan.
+     */
+    public function show(
+        StatisticScan $scan
+    ) {
+        return view(
+            'stats.show',
+            [
+                'scan' => $scan,
+            ]
+        );
+    }
+
+
+    /**
+     * Export filtered component statistics as CSV.
+     */
+    public function exportCsv(Request $request)
+    {
+        try {
+
+            $latestScan =
+                StatisticScan::latest(
+                    'scanned_at'
+                )->first();
+
+            if (!$latestScan) {
+
+                return redirect()
+                    ->route('stats.index')
+                    ->with(
+                        'error',
+                        'No statistics scan available for export.'
+                    );
+            }
+
+
+            $statistics =
+                $latestScan->statistics ?? [];
+
+
+            $search = trim(
+                (string) $request->query('search')
+            );
+
+            $filter = $request->query(
+                'filter',
+                'all'
+            );
+
+
+            $components =
+                $this->statsService->getComponents(
+                    $statistics
+                );
+
+
+            $components =
+                $this->statsService->filterComponents(
+                    $components,
+                    $search,
+                    $filter
+                );
+
+
+            $sort = $request->query(
+                'sort',
+                'name'
+            );
+
+            $direction = $request->query(
+                'direction',
+                'asc'
+            );
+
+
+            $allowedSorts = [
+                'name',
+                'number_of_classes',
+                'number_of_methods',
+                'methods_per_class',
+                'loc',
+                'lloc',
+                'lloc_per_method',
+            ];
+
+
+            if (!in_array($sort, $allowedSorts)) {
+
+                $sort = 'name';
+            }
+
+
+            if (!in_array($direction, ['asc', 'desc'])) {
+
+                $direction = 'asc';
+            }
+
+
+            $components = collect($components)
+                ->sortBy(
+                    fn ($component) =>
+                        $component[$sort] ?? 0,
+                    SORT_NATURAL | SORT_FLAG_CASE,
+                    $direction === 'desc'
+                )
+                ->values();
+
+
+            $filename =
+                'statistics-' .
+                now()->format('Y-m-d-H-i-s') .
+                '.csv';
+
+
+            return Response::streamDownload(
+                function () use ($components) {
+
+                    $handle = fopen(
+                        'php://output',
+                        'w'
+                    );
+
+
+                    fputcsv(
+                        $handle,
+                        [
+                            'Component',
+                            'Classes',
+                            'Methods',
+                            'Methods/Class',
+                            'LOC',
+                            'LLOC',
+                            'LLOC/Method',
+                        ]
+                    );
+
+
+                    foreach ($components as $component) {
+
+                        fputcsv(
+                            $handle,
+                            [
+                                $component['name'] ?? '',
+
+                                $component['number_of_classes'] ?? 0,
+
+                                $component['number_of_methods'] ?? 0,
+
+                                $component['methods_per_class'] ?? 0,
+
+                                $component['loc'] ?? 0,
+
+                                $component['lloc'] ?? 0,
+
+                                $component['lloc_per_method'] ?? 0,
+                            ]
+                        );
+                    }
+
+
+                    fclose($handle);
+                },
+                $filename,
+                [
+                    'Content-Type' =>
+                        'text/csv; charset=UTF-8',
+                ]
+            );
+
+        } catch (Throwable $e) {
+
+            return redirect()
+                ->route('stats.index')
+                ->with(
+                    'error',
+                    'CSV export failed: ' .
+                    $e->getMessage()
+                );
+        }
+    }
+
+
+    /**
+     * Export complete statistics as JSON.
+     */
+    public function exportJson()
+    {
+        try {
+
+            $latestScan =
+                StatisticScan::latest(
+                    'scanned_at'
+                )->first();
+
+
+            if (!$latestScan) {
+
+                return redirect()
+                    ->route('stats.index')
+                    ->with(
+                        'error',
+                        'No statistics scan available for export.'
+                    );
+            }
+
+
+            $filename =
+                'statistics-' .
+                now()->format('Y-m-d-H-i-s') .
+                '.json';
+
+
+            return response()->json(
+                [
+                    'project_name' =>
+                        $latestScan->project_name,
+
+                    'scanned_at' =>
+                        $latestScan->scanned_at,
+
+                    'metrics' =>
+                        [
+                            'number_of_classes' =>
+                                $latestScan->number_of_classes,
+
+                            'number_of_methods' =>
+                                $latestScan->number_of_methods,
+
+                            'methods_per_class' =>
+                                $latestScan->methods_per_class,
+
+                            'loc' =>
+                                $latestScan->loc,
+
+                            'lloc' =>
+                                $latestScan->lloc,
+
+                            'lloc_per_method' =>
+                                $latestScan->lloc_per_method,
+
+                            'code_lloc' =>
+                                $latestScan->code_lloc,
+
+                            'test_lloc' =>
+                                $latestScan->test_lloc,
+
+                            'code_to_test_ratio' =>
+                                $latestScan->code_to_test_ratio,
+
+                            'number_of_routes' =>
+                                $latestScan->number_of_routes,
+                        ],
+
+                    'statistics' =>
+                        $latestScan->statistics,
+                ],
+                200,
+                [
+                    'Content-Disposition' =>
+                        'attachment; filename="' .
+                        $filename .
+                        '"',
+                ]
+            );
+
+        } catch (Throwable $e) {
+
+            return redirect()
+                ->route('stats.index')
+                ->with(
+                    'error',
+                    'JSON export failed: ' .
+                    $e->getMessage()
+                );
+        }
     }
 
 

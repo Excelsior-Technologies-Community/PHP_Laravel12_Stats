@@ -7,28 +7,23 @@
 
     <meta
         name="viewport"
-        content="width=device-width, initial-scale=1.0"
-    >
+        content="width=device-width, initial-scale=1.0">
 
     <title>Laravel Project Statistics</title>
 
     <link
         href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css"
-        rel="stylesheet"
-    >
+        rel="stylesheet">
 
     <style>
-
         body {
             background: #f4f6f9;
         }
 
         .dashboard-header {
-            background: linear-gradient(
-                135deg,
-                #0d6efd,
-                #6610f2
-            );
+            background: linear-gradient(135deg,
+                    #0d6efd,
+                    #6610f2);
 
             color: white;
             border-radius: 15px;
@@ -63,64 +58,146 @@
             min-width: 1000px;
         }
 
+        .pagination {
+            margin-bottom: 0;
+        }
+
+        /*
+        |--------------------------------------------------------------------------
+        | Numeric Only Pagination
+        |--------------------------------------------------------------------------
+        */
+
+        .numeric-pagination {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 6px;
+        }
+
+        .numeric-pagination .page-link {
+            min-width: 40px;
+            height: 40px;
+
+            display: flex;
+            align-items: center;
+            justify-content: center;
+
+            border-radius: 8px;
+
+            font-weight: 600;
+            text-decoration: none;
+        }
+
+        .numeric-pagination .page-item.active .page-link {
+            background-color: #0d6efd;
+            border-color: #0d6efd;
+            color: white;
+        }
+
+        .numeric-pagination .page-item.disabled .page-link {
+            color: #adb5bd;
+            background-color: #f8f9fa;
+            border-color: #dee2e6;
+        }
+
+        .numeric-pagination .page-link:hover {
+            background-color: #e9ecef;
+        }
+
+        .numeric-pagination .page-item.active .page-link:hover {
+            background-color: #0b5ed7;
+            color: white;
+        }
     </style>
 
 </head>
 
+
 <body>
 
-<div class="container-fluid py-4 px-lg-5">
+    <div class="container-fluid py-4 px-lg-5">
 
 
-    {{-- Header --}}
+        {{-- ========================================================= --}}
+        {{-- Header --}}
+        {{-- ========================================================= --}}
 
-    <div class="dashboard-header p-4 mb-4 shadow-sm">
+        <div class="dashboard-header p-4 mb-4 shadow-sm">
 
-        <div class="d-flex flex-column flex-lg-row
+            <div class="d-flex flex-column flex-lg-row
                     justify-content-between
                     align-items-lg-center">
 
-            <div>
+                <div>
 
-                <h1 class="fw-bold mb-1">
-                    📊 Laravel Project Statistics
-                </h1>
+                    <h1 class="fw-bold mb-1">
+                        📊 Laravel Project Statistics
+                    </h1>
 
-                <p class="mb-0 opacity-75">
-                    Project analysis powered by Wnx Laravel Stats
-                </p>
+                    <p class="mb-0 opacity-75">
+                        Project analysis powered by Wnx Laravel Stats
+                    </p>
 
-            </div>
+                </div>
 
 
-            <div class="mt-3 mt-lg-0">
+                <div class="mt-3 mt-lg-0 d-flex gap-2 flex-wrap">
 
-                <form
-                    method="POST"
-                    action="{{ route('stats.scan') }}"
-                >
+                    <form
+                        method="POST"
+                        action="{{ route('stats.scan') }}">
 
-                    @csrf
+                        @csrf
 
-                    <button
-                        type="submit"
-                        class="btn btn-light fw-semibold"
-                    >
-                        🔄 Run New Scan
-                    </button>
+                        <button
+                            type="submit"
+                            class="btn btn-light fw-semibold">
 
-                </form>
+                            🔄 Run New Scan
+
+                        </button>
+
+                    </form>
+
+
+                    @if($latestScan)
+
+                    <a
+                        href="{{ route(
+                            'stats.export.csv',
+                            request()->query()
+                        ) }}"
+                        class="btn btn-success fw-semibold">
+
+                        📥 CSV
+
+                    </a>
+
+
+                    <a
+                        href="{{ route('stats.export.json') }}"
+                        class="btn btn-warning fw-semibold">
+
+                        🧾 JSON
+
+                    </a>
+
+                    @endif
+
+                </div>
 
             </div>
 
         </div>
 
-    </div>
 
+        {{-- ========================================================= --}}
+        {{-- Success Message --}}
+        {{-- ========================================================= --}}
 
-    {{-- Success Message --}}
-
-    @if(session('success'))
+        @if(session('success'))
 
         <div class="alert alert-success alert-dismissible fade show">
 
@@ -129,30 +206,40 @@
             <button
                 type="button"
                 class="btn-close"
-                data-bs-dismiss="alert"
-            ></button>
+                data-bs-dismiss="alert">
+            </button>
 
         </div>
 
-    @endif
+        @endif
 
 
-    {{-- Error Message --}}
+        {{-- ========================================================= --}}
+        {{-- Error Message --}}
+        {{-- ========================================================= --}}
 
-    @if(session('error'))
+        @if(session('error'))
 
-        <div class="alert alert-danger">
+        <div class="alert alert-danger alert-dismissible fade show">
 
             {{ session('error') }}
 
+            <button
+                type="button"
+                class="btn-close"
+                data-bs-dismiss="alert">
+            </button>
+
         </div>
 
-    @endif
+        @endif
 
 
-    {{-- Exception Error --}}
+        {{-- ========================================================= --}}
+        {{-- Exception --}}
+        {{-- ========================================================= --}}
 
-    @isset($error)
+        @isset($error)
 
         <div class="alert alert-danger">
 
@@ -166,10 +253,10 @@
 
         </div>
 
-    @endisset
+        @endisset
 
 
-    @if($latestScan)
+        @if($latestScan)
 
 
         {{-- ========================================================= --}}
@@ -241,7 +328,7 @@
             </div>
 
 
-            {{-- Lines --}}
+            {{-- LOC --}}
 
             <div class="col-md-6 col-xl-3">
 
@@ -272,7 +359,7 @@
             </div>
 
 
-            {{-- Logical Lines --}}
+            {{-- LLOC --}}
 
             <div class="col-md-6 col-xl-3">
 
@@ -333,7 +420,7 @@
                         </div>
 
                         <small class="text-muted">
-                            Registered application routes
+                            Registered routes
                         </small>
 
                     </div>
@@ -364,7 +451,7 @@
                         </div>
 
                         <small class="text-muted">
-                            Logical lines of application code
+                            Application code
                         </small>
 
                     </div>
@@ -395,7 +482,7 @@
                         </div>
 
                         <small class="text-muted">
-                            Logical lines in tests
+                            Test code
                         </small>
 
                     </div>
@@ -459,6 +546,7 @@
 
                     </div>
 
+
                     <div class="col-md-6 text-md-end">
 
                         <strong>
@@ -479,7 +567,7 @@
 
 
         {{-- ========================================================= --}}
-        {{-- Search & Filter --}}
+        {{-- Search / Filter / Sort --}}
         {{-- ========================================================= --}}
 
         <div class="card shadow-sm border-0 mb-4">
@@ -487,21 +575,20 @@
             <div class="card-body">
 
                 <h5 class="fw-bold mb-3">
-                    🔎 Search & Filter Statistics
+                    🔎 Search, Filter & Sort Statistics
                 </h5>
 
 
                 <form
                     method="GET"
-                    action="{{ route('stats.index') }}"
-                >
+                    action="{{ route('stats.index') }}">
 
                     <div class="row g-3">
 
 
                         {{-- Search --}}
 
-                        <div class="col-md-7">
+                        <div class="col-lg-4">
 
                             <label class="form-label">
                                 Search
@@ -512,15 +599,14 @@
                                 name="search"
                                 value="{{ $search }}"
                                 class="form-control"
-                                placeholder="Search component..."
-                            >
+                                placeholder="Search component...">
 
                         </div>
 
 
                         {{-- Category --}}
 
-                        <div class="col-md-3">
+                        <div class="col-lg-3">
 
                             <label class="form-label">
                                 Category
@@ -528,106 +614,106 @@
 
                             <select
                                 name="filter"
-                                class="form-select"
-                            >
+                                class="form-select">
 
                                 <option
                                     value="all"
                                     {{ $filter === 'all'
                                         ? 'selected'
-                                        : '' }}
-                                >
-                                    All Statistics
-                                </option>
+                                        : '' }}>
 
+                                    All Statistics
+
+                                </option>
 
                                 <option
                                     value="Commands"
                                     {{ $filter === 'Commands'
                                         ? 'selected'
-                                        : '' }}
-                                >
-                                    Commands
-                                </option>
+                                        : '' }}>
 
+                                    Commands
+
+                                </option>
 
                                 <option
                                     value="Controllers"
                                     {{ $filter === 'Controllers'
                                         ? 'selected'
-                                        : '' }}
-                                >
-                                    Controllers
-                                </option>
+                                        : '' }}>
 
+                                    Controllers
+
+                                </option>
 
                                 <option
                                     value="Database Factories"
                                     {{ $filter === 'Database Factories'
                                         ? 'selected'
-                                        : '' }}
-                                >
-                                    Database Factories
-                                </option>
+                                        : '' }}>
 
+                                    Database Factories
+
+                                </option>
 
                                 <option
                                     value="Migrations"
                                     {{ $filter === 'Migrations'
                                         ? 'selected'
-                                        : '' }}
-                                >
-                                    Migrations
-                                </option>
+                                        : '' }}>
 
+                                    Migrations
+
+                                </option>
 
                                 <option
                                     value="Models"
                                     {{ $filter === 'Models'
                                         ? 'selected'
-                                        : '' }}
-                                >
-                                    Models
-                                </option>
+                                        : '' }}>
 
+                                    Models
+
+                                </option>
 
                                 <option
                                     value="Other"
                                     {{ $filter === 'Other'
                                         ? 'selected'
-                                        : '' }}
-                                >
-                                    Other
-                                </option>
+                                        : '' }}>
 
+                                    Other
+
+                                </option>
 
                                 <option
                                     value="PHPUnit Tests"
                                     {{ $filter === 'PHPUnit Tests'
                                         ? 'selected'
-                                        : '' }}
-                                >
-                                    PHPUnit Tests
-                                </option>
+                                        : '' }}>
 
+                                    PHPUnit Tests
+
+                                </option>
 
                                 <option
                                     value="Seeders"
                                     {{ $filter === 'Seeders'
                                         ? 'selected'
-                                        : '' }}
-                                >
-                                    Seeders
-                                </option>
+                                        : '' }}>
 
+                                    Seeders
+
+                                </option>
 
                                 <option
                                     value="Service Providers"
                                     {{ $filter === 'Service Providers'
                                         ? 'selected'
-                                        : '' }}
-                                >
+                                        : '' }}>
+
                                     Service Providers
+
                                 </option>
 
                             </select>
@@ -635,16 +721,234 @@
                         </div>
 
 
-                        {{-- Search Button --}}
+                        {{-- Sort --}}
 
-                        <div class="col-md-2 d-flex align-items-end">
+                        <div class="col-lg-3">
 
-                            <button
-                                type="submit"
-                                class="btn btn-primary w-100"
-                            >
-                                Search
-                            </button>
+                            <label class="form-label">
+                                Sort By
+                            </label>
+
+                            <select
+                                name="sort"
+                                class="form-select">
+
+                                <option
+                                    value="name"
+                                    {{ $sort === 'name'
+                                        ? 'selected'
+                                        : '' }}>
+
+                                    Component Name
+
+                                </option>
+
+                                <option
+                                    value="number_of_classes"
+                                    {{ $sort === 'number_of_classes'
+                                        ? 'selected'
+                                        : '' }}>
+
+                                    Classes
+
+                                </option>
+
+                                <option
+                                    value="number_of_methods"
+                                    {{ $sort === 'number_of_methods'
+                                        ? 'selected'
+                                        : '' }}>
+
+                                    Methods
+
+                                </option>
+
+                                <option
+                                    value="methods_per_class"
+                                    {{ $sort === 'methods_per_class'
+                                        ? 'selected'
+                                        : '' }}>
+
+                                    Methods / Class
+
+                                </option>
+
+                                <option
+                                    value="loc"
+                                    {{ $sort === 'loc'
+                                        ? 'selected'
+                                        : '' }}>
+
+                                    LOC
+
+                                </option>
+
+                                <option
+                                    value="lloc"
+                                    {{ $sort === 'lloc'
+                                        ? 'selected'
+                                        : '' }}>
+
+                                    LLOC
+
+                                </option>
+
+                                <option
+                                    value="lloc_per_method"
+                                    {{ $sort === 'lloc_per_method'
+                                        ? 'selected'
+                                        : '' }}>
+
+                                    LLOC / Method
+
+                                </option>
+
+                            </select>
+
+                        </div>
+
+
+                        {{-- Direction --}}
+
+                        <div class="col-lg-2">
+
+                            <label class="form-label">
+                                Direction
+                            </label>
+
+                            <select
+                                name="direction"
+                                class="form-select">
+
+                                <option
+                                    value="asc"
+                                    {{ $direction === 'asc'
+                                        ? 'selected'
+                                        : '' }}>
+
+                                    Ascending
+
+                                </option>
+
+                                <option
+                                    value="desc"
+                                    {{ $direction === 'desc'
+                                        ? 'selected'
+                                        : '' }}>
+
+                                    Descending
+
+                                </option>
+
+                            </select>
+
+                        </div>
+
+
+                        {{-- Per Page --}}
+
+                        <div class="col-lg-2">
+
+                            <label class="form-label">
+                                Per Page
+                            </label>
+
+                            <select
+                                name="per_page"
+                                class="form-select">
+
+                                <option
+                                    value="5"
+                                    {{ $perPage == 5
+                                        ? 'selected'
+                                        : '' }}>
+
+                                    5
+
+                                </option>
+
+                                <option
+                                    value="10"
+                                    {{ $perPage == 10
+                                        ? 'selected'
+                                        : '' }}>
+
+                                    10
+
+                                </option>
+
+                                <option
+                                    value="20"
+                                    {{ $perPage == 20
+                                        ? 'selected'
+                                        : '' }}>
+
+                                    20
+
+                                </option>
+
+                                <option
+                                    value="50"
+                                    {{ $perPage == 50
+                                        ? 'selected'
+                                        : '' }}>
+
+                                    50
+
+                                </option>
+
+                            </select>
+
+                        </div>
+
+
+                        {{-- Buttons --}}
+
+                        <div class="col-12">
+
+                            <div class="d-flex gap-2 flex-wrap">
+
+                                <button
+                                    type="submit"
+                                    class="btn btn-primary">
+
+                                    🔎 Apply
+
+                                </button>
+
+
+                                <a
+                                    href="{{ route('stats.index') }}"
+                                    class="btn btn-outline-secondary">
+
+                                    Reset
+
+                                </a>
+
+
+                                <a
+                                    href="{{ route(
+                                        'stats.export.csv',
+                                        request()->query()
+                                    ) }}"
+                                    class="btn btn-success">
+
+                                    📥 Export CSV
+
+                                </a>
+
+
+                                <a
+                                    href="{{ route(
+                                        'stats.export.json'
+                                    ) }}"
+                                    class="btn btn-warning">
+
+                                    🧾 Export JSON
+
+                                </a>
+
+                            </div>
 
                         </div>
 
@@ -665,7 +969,7 @@
 
             <div class="card-header bg-white">
 
-                <div class="d-flex justify-content-between">
+                <div class="d-flex justify-content-between align-items-center">
 
                     <h5 class="fw-bold mb-0">
                         📋 Component Statistics
@@ -673,7 +977,7 @@
 
                     <span class="badge bg-primary">
 
-                        {{ count($components) }}
+                        {{ $totalComponents }}
 
                         Results
 
@@ -689,8 +993,7 @@
                 <div class="table-responsive">
 
                     <table
-                        class="table table-hover mb-0 component-table"
-                    >
+                        class="table table-hover mb-0 component-table">
 
                         <thead class="table-light">
 
@@ -735,15 +1038,22 @@
 
                         <tbody>
 
-                        @forelse(
+                            @forelse(
                             $components
                             as $index => $component
-                        )
+                            )
 
                             <tr>
 
                                 <td>
-                                    {{ $index + 1 }}
+
+                                    {{
+                                            ($components->currentPage() - 1)
+                                            * $components->perPage()
+                                            + $index
+                                            + 1
+                                        }}
+
                                 </td>
 
 
@@ -761,8 +1071,8 @@
                                 <td>
 
                                     {{ number_format(
-                                        $component['number_of_classes']
-                                    ) }}
+                                            $component['number_of_classes']
+                                        ) }}
 
                                 </td>
 
@@ -770,8 +1080,8 @@
                                 <td>
 
                                     {{ number_format(
-                                        $component['number_of_methods']
-                                    ) }}
+                                            $component['number_of_methods']
+                                        ) }}
 
                                 </td>
 
@@ -786,8 +1096,8 @@
                                 <td>
 
                                     {{ number_format(
-                                        $component['loc']
-                                    ) }}
+                                            $component['loc']
+                                        ) }}
 
                                 </td>
 
@@ -795,8 +1105,8 @@
                                 <td>
 
                                     {{ number_format(
-                                        $component['lloc']
-                                    ) }}
+                                            $component['lloc']
+                                        ) }}
 
                                 </td>
 
@@ -809,14 +1119,13 @@
 
                             </tr>
 
-                        @empty
+                            @empty
 
                             <tr>
 
                                 <td
                                     colspan="8"
-                                    class="text-center py-5"
-                                >
+                                    class="text-center py-5">
 
                                     <div class="text-muted">
 
@@ -828,7 +1137,7 @@
 
                             </tr>
 
-                        @endforelse
+                            @endforelse
 
                         </tbody>
 
@@ -837,6 +1146,51 @@
                 </div>
 
             </div>
+
+
+            {{-- ===================================================== --}}
+            {{-- Numeric Only Pagination --}}
+            {{-- ===================================================== --}}
+
+            @if($components->hasPages())
+
+            <div class="card-footer bg-white">
+
+                <nav
+                    aria-label="Component statistics pagination">
+
+                    <ul class="pagination numeric-pagination mb-0">
+
+                        @foreach($components->getUrlRange(
+                        1,
+                        $components->lastPage()
+                        ) as $page => $url)
+
+                        <li
+                            class="page-item
+                                    {{ $page == $components->currentPage()
+                                        ? 'active'
+                                        : '' }}">
+
+                            <a
+                                class="page-link"
+                                href="{{ $url }}">
+
+                                {{ $page }}
+
+                            </a>
+
+                        </li>
+
+                        @endforeach
+
+                    </ul>
+
+                </nav>
+
+            </div>
+
+            @endif
 
         </div>
 
@@ -860,10 +1214,13 @@
 
                 <div class="json-container">
 
-<pre class="mb-0 text-light">{{ json_encode(
-    $statistics,
-    JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES
-) }}</pre>
+                    <pre class="mb-0 text-light">{{
+                        json_encode(
+                            $statistics,
+                            JSON_PRETTY_PRINT |
+                            JSON_UNESCAPED_SLASHES
+                        )
+                    }}</pre>
 
                 </div>
 
@@ -880,21 +1237,22 @@
 
             <a
                 href="{{ route('stats.history') }}"
-                class="btn btn-dark"
-            >
+                class="btn btn-dark">
+
                 📈 Statistics History
+
             </a>
 
         </div>
 
-    @endif
+        @endif
 
-</div>
+    </div>
 
 
-<script
-    src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"
-></script>
+    <script
+        src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js">
+    </script>
 
 </body>
 
