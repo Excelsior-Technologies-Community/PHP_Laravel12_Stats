@@ -190,6 +190,25 @@
 
             </div>
 
+            {{-- Navigation Pills --}}
+            <ul class="nav nav-pills mt-4 bg-white p-2 rounded-3 shadow-sm">
+                <li class="nav-item">
+                    <a class="nav-link active" href="{{ route('stats.index') }}">📊 Overview Stats</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="{{ route('stats.quality') }}">🎯 Code Quality Radar</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="{{ route('stats.analytics') }}">📈 Trend Analytics</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="{{ route('stats.audit') }}">💡 Architecture Audit</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="{{ route('stats.history') }}">📜 Scan History</a>
+                </li>
+            </ul>
+
         </div>
 
 

@@ -9,10 +9,13 @@ use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Facades\Response;
 use Throwable;
 
+use App\Services\CodeQualityService;
+
 class StatsController extends Controller
 {
     public function __construct(
-        protected ProjectStatsService $statsService
+        protected ProjectStatsService $statsService,
+        protected CodeQualityService $qualityService
     ) {
     }
 
@@ -777,5 +780,117 @@ class StatsController extends Controller
                 'success',
                 'Statistics scan deleted successfully.'
             );
+    }
+
+    /**
+     * Real-Time Code Quality Radar & Maintainability Index Inspector.
+     */
+    public function codeQuality(Request $request)
+    {
+        $latestScan = StatisticScan::latest('scanned_at')->first();
+
+        if (!$latestScan) {
+            $latestScan = $this->statsService->createScan();
+        }
+
+        $qualityAnalysis = $this->qualityService->analyzeCodeQuality($latestScan->statistics ?? []);
+
+        return view('stats.quality', [
+            'latestScan' => $latestScan,
+            'components' => $qualityAnalysis['components'],
+            'overallMi' => $qualityAnalysis['overall_mi'],
+            'highRiskCount' => $qualityAnalysis['high_risk_count'],
+            'moderateRiskCount' => $qualityAnalysis['moderate_risk_count'],
+            'lowRiskCount' => $qualityAnalysis['low_risk_count'],
+        ]);
+    }
+
+    /**
+     * Interactive Code Churn & Multi-Scan Trend Analytics View.
+     */
+    public function analytics(Request $request)
+    {
+        $trends = $this->qualityService->getScanTrends();
+
+        return view('stats.analytics', [
+            'trends' => $trends,
+        ]);
+    }
+
+    /**
+     * Multi-Scan Trend Analytics JSON API Endpoint.
+     */
+    public function analyticsJson(Request $request)
+    {
+        $trends = $this->qualityService->getScanTrends();
+
+        return response()->json([
+            'status' => 'success',
+            'scans_count' => $trends['total_scans'],
+            'data' => [
+                'labels' => $trends['labels'],
+                'classes' => $trends['classes'],
+                'methods' => $trends['methods'],
+                'lloc' => $trends['lloc'],
+                'routes' => $trends['routes'],
+                'test_ratios' => $trends['test_ratios'],
+            ]
+        ]);
+    }
+
+    /**
+     * Smart Architecture Health & Anti-Pattern Detector View.
+     */
+    public function architectureAudit(Request $request)
+    {
+        $latestScan = StatisticScan::latest('scanned_at')->first();
+
+        if (!$latestScan) {
+            $latestScan = $this->statsService->createScan();
+        }
+
+        $issues = $this->qualityService->detectAntiPatterns($latestScan);
+
+        return view('stats.audit', [
+            'latestScan' => $latestScan,
+            'issues' => $issues,
+        ]);
+    }
+
+    /**
+     * Export Architecture Audit Report as CSV.
+     */
+    public function exportAuditCsv(Request $request)
+    {
+        $latestScan = StatisticScan::latest('scanned_at')->first();
+
+        if (!$latestScan) {
+            return redirect()->route('stats.audit')->with('error', 'No scan available for audit export.');
+        }
+
+        $issues = $this->qualityService->detectAntiPatterns($latestScan);
+        $filename = 'architecture-audit-' . now()->format('Y-m-d-H-i-s') . '.csv';
+
+        return Response::streamDownload(
+            function () use ($issues) {
+                $handle = fopen('php://output', 'w');
+                fputcsv($handle, ['Title', 'Severity', 'Component', 'Metric', 'Description', 'Recommendation']);
+
+                foreach ($issues as $issue) {
+                    fputcsv($handle, [
+                        $issue['title'] ?? '',
+                        $issue['severity'] ?? '',
+                        $issue['component'] ?? '',
+                        $issue['metric'] ?? '',
+                        $issue['description'] ?? '',
+                        $issue['recommendation'] ?? '',
+                    ]);
+                }
+
+                fclose($handle);
+            },
+            $filename,
+            ['Content-Type' => 'text/csv; charset=UTF-8']
+        );
     }
 }
