@@ -132,4 +132,50 @@ Route::prefix('stats')
             '/export/json',
             [StatsController::class, 'exportJson']
         )->name('export.json');
+
+
+        /*
+        |--------------------------------------------------------------------------
+        | NEW: Real-Time Code Quality Radar & Maintainability Index
+        |--------------------------------------------------------------------------
+        */
+
+        Route::get(
+            '/code-quality',
+            [StatsController::class, 'codeQuality']
+        )->name('quality');
+
+
+        /*
+        |--------------------------------------------------------------------------
+        | NEW: Multi-Scan Code Churn & Growth Trend Analytics
+        |--------------------------------------------------------------------------
+        */
+
+        Route::get(
+            '/analytics',
+            [StatsController::class, 'analytics']
+        )->name('analytics');
+
+        Route::get(
+            '/analytics-json',
+            [StatsController::class, 'analyticsJson']
+        )->name('analytics.json');
+
+
+        /*
+        |--------------------------------------------------------------------------
+        | NEW: Smart Architecture Health & Anti-Pattern Detector Engine
+        |--------------------------------------------------------------------------
+        */
+
+        Route::get(
+            '/architecture-audit',
+            [StatsController::class, 'architectureAudit']
+        )->name('audit');
+
+        Route::get(
+            '/architecture-audit/export',
+            [StatsController::class, 'exportAuditCsv']
+        )->name('audit.export');
     });
